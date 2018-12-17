@@ -2,9 +2,7 @@ package main
 
 import (
     "context"
-//    "encoding/json"
     "fmt"
-//    "io/ioutil"
     "log"
     "net/http"
     "strconv"
@@ -60,35 +58,46 @@ func init() {
         })
     })
     // handle Dialogflow at this endpoint
-    r.POST("/endpoint", func(c *gin.Context) {
-        // post form not querystring
-        message := c.PostForm("message")
-        log.Println(message)
-       // Use NLP
-       response := dp.processNLP(message, "testUser")
-       log.Printf("%#v\n", response)
-       c.JSON(200, response)
-    })
-    // from different example - 
+    r.POST("/endpoint", handleEndpoint)
+    // fulfillment webhook (from different medium article)
     r.POST("/webhook", handleWebhook)
     // listen and serve on 0.0.0.0:8080
-    r.Run() 
+    r.Run()
     // For Google AppEngine - bridges gin and AppEngine
     // Handle all requests using net/http
     http.Handle("/", r)
 }
 
-// 
+// more complex webhhok which takes raw message and uses NLP
+// before returning response
+func handleEndpoint(c *gin.Context) {
+    // post form not querystring
+    message := c.PostForm("message")
+    log.Println(message)
+    // Use NLP
+    response := dp.processNLP(message, "testUser")
+    log.Printf("%#v\n", response)
+    c.JSON(200, response)
+}
+
+// Simple webhook just example so it ain't doing anything useful
 func handleWebhook(c *gin.Context) {
     var err error
 
     wr := dialogflowpb.WebhookRequest{}
-    if err = jsonpb.Unmarshal(c.Request.Body, &wr); err != nil {
+    var unmar jsonpb.Unmarshaler  // https://github.com/google/go-genproto/issues/74
+    unmar.AllowUnknownFields = true
+    if err = unmar.Unmarshal(c.Request.Body, &wr); err != nil {
         log.Println(err.Error())
         c.Status(http.StatusBadRequest)
         return
     }
-    fmt.Println(wr.GetQueryResult().GetOutputContexts())
+    log.Println(wr.GetQueryResult().GetQueryText())
+    // log.Println(wr)
+    fullfillment := dialogflowpb.WebhookResponse{
+        FulfillmentText: "How the fuck should I know?!",
+    }
+    c.JSON(http.StatusOK, fullfillment)
 }
 
 func (dp *DialogflowProcessor) init(a ...string) (err error) {

@@ -1,2 +1,9 @@
+# deploy script has many secrets
+deploy.sh
+
 dialogflow-auth
 dialogflow-go-2728cf6fd9ad.json
+
+
+Gopkg.toml
+Gopkg.lock
