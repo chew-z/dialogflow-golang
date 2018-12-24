@@ -94,8 +94,24 @@ func handleWebhook(c *gin.Context) {
     }
     log.Println(wr.GetQueryResult().GetQueryText())
     // log.Println(wr)
+    
     fullfillment := dialogflowpb.WebhookResponse{
         FulfillmentText: "How the fuck should I know?!",
+        Payload: struct{
+            Platform: 8,
+            RichMessage: {
+                "expectUserResponse": true,
+                "richResponse": {
+                  "items": [
+                    {
+                      "simpleResponse": {
+                        "textToSpeech": "this is a simple response"
+                      }
+                    }
+                  ]
+                }
+              }
+        }
     }
     c.JSON(http.StatusOK, fullfillment)
 }
